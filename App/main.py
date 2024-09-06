@@ -18,7 +18,7 @@ def create_streamlit_app(llm, portfolio, clean_text):
     # User Input Section
     with st.sidebar:
         st.header("Input Details")
-        url_input = st.text_input("Job Posting URL:", value="https://jobs.nike.com/job/R-33460",
+        url_input = st.text_input("Job Posting URL:", value="",
                                   help="Enter the URL of the job posting you are interested in.")
         submit_button = st.button("Generate Email")
 
