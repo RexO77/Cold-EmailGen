@@ -1,7 +1,7 @@
 langchain==0.2.14
 langchain-community==0.2.19
 langchain-groq===0.1.9
-unstructured==0.14.6
+unstructured==0.18.18
 selenium==4.21.0
 chromadb==0.5.5
 streamlit==1.37.0
