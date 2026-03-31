@@ -1,5 +1,5 @@
 langchain==0.2.14
-langchain-community==0.2.19
+langchain-community==0.3.27
 langchain-groq===0.1.9
 unstructured==0.18.18
 selenium==4.21.0
