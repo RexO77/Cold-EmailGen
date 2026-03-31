@@ -4,6 +4,6 @@ langchain-groq===0.1.9
 unstructured==0.18.18
 selenium==4.21.0
 chromadb==0.5.5
-streamlit==1.37.0
+streamlit==1.54.0
 pandas==2.0.2
 python-dotenv==1.0.0
