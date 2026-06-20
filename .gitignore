@@ -1,0 +1,19 @@
+# Secrets
+.env
+**/.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Vector store (regenerated from uploaded resume)
+vectorstore/
+
+# IDE
+.idea/
+.ipynb_checkpoints/
+
+# Claude Code local tooling
+.claude/

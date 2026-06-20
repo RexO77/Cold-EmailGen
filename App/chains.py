@@ -38,67 +38,100 @@ class Chain:
             raise OutputParserException("Context too big. Unable to parse jobs.")
         return res if isinstance(res, list) else [res]
 
-    def write_mail(self, job, links):
+    def write_mail(self, job, resume_context):
         prompt_email = PromptTemplate.from_template(
             """
             ### JOB DESCRIPTION:
             {job_description}
 
+            ### CANDIDATE RESUME (most relevant excerpts):
+            {resume_context}
+
             ### INSTRUCTION:
-            You are {Your Name}, a highly skilled and motivated {your_job} actively seeking a new opportunity. 
-            Your goal is to craft a persuasive cold email to the HR or hiring manager for the job mentioned above, 
-            demonstrating your expertise, achievements, and passion for excellence in your field. 
-            Highlight how your proven track record and unique skill set make you an exceptional fit for the role, and convey 
-            your enthusiasm for contributing to the company's continued success. 
-            If applicable, mention any relevant projects, accolades, or links that showcase your outstanding qualifications: {link_list}.
-            Remember, your objective is to not only capture but also retain the interest of the HR or hiring manager.
-            Avoid any preamble and get straight to the point.
+            You are the candidate described in the resume excerpts above. Write a
+            persuasive, concise cold email to the hiring manager applying for the job
+            described above.
+
+            Rules:
+            - Ground EVERY claim about the candidate strictly in the resume excerpts.
+              Do NOT invent employers, titles, achievements, metrics, or skills that
+              are not present in the resume.
+            - Connect the candidate's actual experience and skills to the specific
+              requirements of the job.
+            - If the resume states the candidate's name, sign off with it; otherwise
+              sign off with "Best regards," and no name.
+            - Keep it tight (around 150-200 words), professional, and free of clichés.
+            - Return ONLY the email body. No preamble, no subject line, no commentary.
+
             ### EMAIL (NO PREAMBLE):
-            Dear Hiring Manager,
-
-            I am writing to express my genuine interest in the {job_title} position at your esteemed company. As a {your_job} with extensive experience in {key_skills}, I have consistently delivered exceptional results, 
-            driving success in every project I undertake. 
-
-            Throughout my career, I have {mention_specific_achievements}, which has honed my ability to {relevant_action_or_skill}, a quality I am eager to bring to your team. What excites me most about this 
-            opportunity is {reason_for_interest_in_company_or_role}. I am confident that my combination of skills in 
-            {additional_skills} and my commitment to excellence will make a meaningful impact at your company. 
-
-            I have attached my resume, which provides further details about my professional journey and 
-            accomplishments. I would be thrilled to discuss how my expertise can align with your team’s objectives 
-            and help drive the company's mission forward. 
-
-            Thank you for considering my application. I look forward to the possibility of contributing to your 
-            esteemed team. 
-
-            Warm regards,
-            {Your Name}
             """
         )
 
-        # Create the chain with the LLM
         chain_email = prompt_email | self.llm
-
-        # Provide all required variables
         res = chain_email.invoke({
             "job_description": str(job),
-            "link_list": links,
-            "Your Name": "Your Name",
-            "job_title": "Job Title",
-            "your_job": "Your Job",
-            "key_skills": "Key Skills",
-            "mention_specific_achievements": "Achievements",
-            "relevant_action_or_skill": "Relevant Action/Skill",
-            "reason_for_interest_in_company_or_role": "Reason for Interest",
-            "additional_skills": "Additional Skills"
+            "resume_context": resume_context or "No resume context available.",
         })
         return res.content
+
+    def assess_and_write(self, job, resume_text):
+        """One call that does two honest jobs: judge whether the résumé actually
+        fits the role, then draft the email. Returns a dict with the verdict,
+        matched strengths, gaps, improvement suggestions, and the email."""
+        prompt = PromptTemplate.from_template(
+            """
+            ### JOB POSTING:
+            {job_description}
+
+            ### CANDIDATE RÉSUMÉ (full text):
+            {resume_text}
+
+            ### INSTRUCTION:
+            Act as a blunt but fair recruiter. First judge how well this résumé
+            fits this specific job, then draft a cold email.
+
+            Be honest above all:
+            - If the candidate clearly lacks required experience or skills, say so
+              plainly in `gaps` and reflect it in the `verdict`. Do not inflate.
+            - Base every judgement only on what the résumé actually contains.
+
+            The email rules (strict):
+            - It is written BY the candidate TO the hiring manager, applying for
+              this role. Never write it from the company's or a recruiter's side.
+            - Even for a weak fit, still write an applying email — lead with genuine
+              transferable strengths, never invented experience, employers, or skills.
+            - Body only: no subject line, no commentary.
+            - Sign off with the candidate's name if the résumé states it; otherwise
+              "Best regards," with no name. Never use a "[Your Name]" placeholder.
+
+            Return ONLY valid JSON (no preamble, no markdown) with these keys:
+            - "verdict": exactly one of "Strong fit", "Possible fit", "Stretch", "Not a fit"
+            - "summary": one honest sentence on the fit
+            - "strengths": array of short strings — where the résumé genuinely matches the role
+            - "gaps": array of short strings — missing experience, skills, or qualifications (empty array if none)
+            - "improve": array of short, actionable strings — what to add or do to become a stronger candidate
+            - "email": the full cold email body as a single string
+
+            ### VALID JSON (NO PREAMBLE):
+            """
+        )
+        chain = prompt | self.llm
+        res = chain.invoke({
+            "job_description": str(job),
+            "resume_text": resume_text or "No résumé provided.",
+        })
+        try:
+            return JsonOutputParser().parse(res.content)
+        except OutputParserException:
+            raise OutputParserException("Couldn't assess this role — the response wasn't valid.")
 
 
 if __name__ == "__main__":
     chain = Chain()
-    job = {"title": "Software Engineer", "description": "Developing applications", "skills": ["Python", "Django"]}
-    links = ["https://portfolio-link.com/project1", "https://portfolio-link.com/project2"]
+    job = {"role": "Senior ML Engineer", "experience": "5+ years in ML",
+           "skills": ["PyTorch", "MLOps"], "description": "Build and deploy ML models at scale."}
+    resume_text = "Jane Doe — Frontend Engineer, 2 years building React apps. Skills: React, TypeScript, CSS."
 
-    email_content = chain.write_mail(job, links)
-    print(email_content)
+    import json
+    print(json.dumps(chain.assess_and_write(job, resume_text), indent=2))
 
