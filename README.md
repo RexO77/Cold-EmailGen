@@ -1,57 +1,70 @@
-
 # Cold Email Generator 📧
 
-**Cold-EmailGen** is an automated tool designed to streamline the creation of cold emails. Utilizing AI and document loaders, this app simplifies the process of personalizing and generating effective email content for marketing, business outreach, and lead generation. It supports integration with advanced tools like LangChain, ChromaDB, and leverages Python's NLTK for efficient natural language processing.
+**Cold-EmailGen** turns your résumé and a job-posting URL into a cold email grounded
+in your *actual* experience — plus an honest read on whether you're even a fit for the
+role. Upload a résumé, paste a job link, and it scrapes the posting, matches it against
+your background, and drafts the email. No templates, no invented credentials.
 
-## Key Features 🔑
-- **Automated Cold Email Generation**: Generates personalized cold emails with a focus on your target audience.
-- **Language Processing**: Integrated with NLTK to ensure effective and coherent email construction.
-- **Web Scraping for Personalized Content**: Extracts relevant information from websites to enhance the email's personalization.
-- **ChromaDB for Vector Search**: Leverages ChromaDB to enable fast and efficient vector search, making it easy to manage large databases of personalized email templates.
-- **Streamlit Integration**: Easy-to-use front-end that allows users to interact with the tool locally and generate emails in real-time.
+## Features 🔑
+- **Résumé-driven** — upload a PDF, DOCX, or TXT. It's parsed and embedded into a local
+  vector store (ChromaDB); no CSV or manual data entry.
+- **Honest fit assessment** — for each role it returns a verdict (*Strong fit / Possible
+  fit / Stretch / Not a fit*), where you match, where you fall short, and how to improve.
+- **Grounded emails** — every claim is drawn from your résumé; it won't fabricate
+  employers, skills, or metrics.
+- **Job-posting scraping** — reads the careers/job URL with LangChain's `WebBaseLoader`.
+- **Polished Streamlit UI** — dark, glassy interface with a dedicated results page.
 
-## Installation ⚙️
-To get started with Cold-EmailGen, follow these steps:
+## Quick start ⚙️
 
-1. **Clone the repository**:
-    ```bash
-    git clone https://github.com/RexO77/Cold-EmailGen.git
-    cd Cold-EmailGen
-    ```
+```bash
+git clone https://github.com/RexO77/Cold-EmailGen.git
+cd Cold-EmailGen
+./run.sh
+```
 
-2. **Set up your environment**:
-   Install the necessary dependencies using pip:
-    ```bash
-    pip install -r requirements.txt
-    ```
+`run.sh` sets everything up on first run (creates a virtualenv, installs dependencies)
+and starts the server; on later runs it goes straight to launching the app. Then open
+**http://localhost:8501**.
 
-3. **Add your API keys**:
-   - Create a `.env` file in the root directory.
-   - Add your required API keys as follows:
-     ```
-     OPENAI_API_KEY=your_openai_api_key
-     ```
+> Run on a different port with `PORT=8600 ./run.sh`.
 
-4. **Run the app locally**:
-   Start the Streamlit app:
-    ```bash
-    streamlit run App/main.py
-    ```
+### API key
+The app uses **Groq** for inference. On first run it creates `App/.env` from
+`App/.env.example` — add your key:
 
-## How It Works ⚙️
-- **Natural Language Processing**: Cold-EmailGen uses NLTK for breaking down complex text structures and identifying the most appropriate sentence patterns for business emails.
-- **Personalization**: The tool uses LangChain to pull relevant data from websites, which can be used to personalize the content of the emails.
-- **ChromaDB for Document Search**: Integrated with ChromaDB for fast, scalable vector-based search across email templates.
+```
+GROQ_API_KEY=your_groq_api_key
+```
 
-## Technologies Used 🛠️
-- **LangChain**: Facilitates seamless document handling and content extraction.
-- **ChromaDB**: Handles the efficient storage and retrieval of large data collections for vector searches.
-- **NLTK**: For natural language processing and text analysis.
-- **Streamlit**: Provides an intuitive web-based front-end for interacting with the tool.
+Get one at https://console.groq.com/keys. (`.env` is gitignored — never commit it.)
 
-## Future Improvements 🛠️
-- **Deployment on Streamlit Cloud**: Although functional locally, future iterations will focus on seamless cloud deployment for broader accessibility.
-- **Advanced Analytics**: Incorporating metrics and feedback loops for optimizing email content.
+### Manual setup (alternative to run.sh)
+Requires **Python 3.11–3.13** (3.14+ can't build the pinned dependencies).
+
+```bash
+python3.13 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cp App/.env.example App/.env   # then add your GROQ_API_KEY
+streamlit run App/main.py
+```
+
+## How it works ⚙️
+1. **Ingest** — your résumé is parsed (`App/resume_parser.py`), chunked, and embedded into
+   ChromaDB (`App/store.py`). A new upload replaces the previous résumé.
+2. **Scrape & extract** — the job URL is fetched and cleaned, then an LLM extracts the
+   postings as structured JSON (role, experience, skills, description).
+3. **Assess & write** — for each role, a single LLM call judges fit against your full
+   résumé and drafts the email (`App/chains.py`).
+4. **Present** — results render on their own page with a color-coded fit card above each
+   draft (`App/main.py`, `App/styles.py`).
+
+## Tech stack 🛠️
+- **Streamlit** — web front-end
+- **LangChain + Groq** (`llama-3.1-8b-instant`) — extraction, assessment, and email drafting
+- **ChromaDB** — local vector store for the résumé
+- **pypdf / python-docx** — résumé parsing
 
 ## Contributing 🤝
-Contributions are welcome! Please create a pull request or open an issue for any bugs or feature requests.
+Contributions welcome — open an issue or a pull request.
