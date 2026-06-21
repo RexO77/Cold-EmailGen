@@ -29,6 +29,10 @@ and starts the server; on later runs it goes straight to launching the app. Then
 
 > Run on a different port with `PORT=8600 ./run.sh`.
 
+**On Windows?** Double-click **`run.bat`** (or run `.\run.bat`). See **[WINDOWS.md](WINDOWS.md)**
+for a full step-by-step guide and troubleshooting — most Windows errors come from having
+Python 3.14+ installed instead of 3.13.
+
 ### API key
 The app uses **Groq** for inference. On first run it creates `App/.env` from
 `App/.env.example` — add your key:
