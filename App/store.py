@@ -1,7 +1,14 @@
+import os
+
 import chromadb
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 COLLECTION_NAME = "resume"
+
+# Project root (one level up from App/), so the vector store always lands in the
+# same place no matter the working directory or platform.
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DEFAULT_PERSIST_DIR = os.path.join(PROJECT_ROOT, "vectorstore")
 
 
 class ResumeStore:
@@ -9,7 +16,7 @@ class ResumeStore:
     chunks most relevant to a job's required skills. Replaces the old CSV-backed
     portfolio: the resume itself is the source of truth, no intermediate file."""
 
-    def __init__(self, persist_dir="vectorstore"):
+    def __init__(self, persist_dir=DEFAULT_PERSIST_DIR):
         self.client = chromadb.PersistentClient(persist_dir)
         self.collection = self.client.get_or_create_collection(name=COLLECTION_NAME)
         self.splitter = RecursiveCharacterTextSplitter(

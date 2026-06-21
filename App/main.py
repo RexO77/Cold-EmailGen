@@ -115,17 +115,18 @@ def friendly_error(e):
 
 
 def generate(llm, store, url):
-    """Scrape → extract jobs → write one email per role. Returns (drafts, error)."""
+    """Scrape → extract jobs → write one email per role.
+    Always returns a 3-tuple: (drafts, error, total_roles_found)."""
     try:
         loader = WebBaseLoader([url])
         data = clean_text(loader.load().pop().page_content)
     except Exception:
-        return None, "Couldn't load that page. Check the URL and try again."
+        return None, "Couldn't load that page. Check the URL and try again.", 0
 
     try:
         jobs = llm.extract_jobs(data)
     except Exception as e:
-        return None, friendly_error(e)
+        return None, friendly_error(e), 0
 
     if not jobs:
         return [], None, 0

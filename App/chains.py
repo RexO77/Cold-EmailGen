@@ -5,8 +5,10 @@ from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.exceptions import OutputParserException
 from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
+# Load environment variables from App/.env regardless of the working directory
+# (so it works the same on macOS, Linux, and Windows, and whether launched from
+# the project root or elsewhere).
+load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
 
 
 class Chain:
